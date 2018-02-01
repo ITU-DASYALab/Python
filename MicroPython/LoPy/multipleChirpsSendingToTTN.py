@@ -32,7 +32,6 @@ class LoRaNetwork:
     def __init__(self):
         global chirp_list
         global temp
-        self.listCounter = 0
 
         # Initialize LoRaWAN radio
         self.lora = LoRa(mode=LoRa.LORAWAN)
@@ -54,13 +53,12 @@ class LoRaNetwork:
         self.s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
         self.s.setblocking(True)
-        self.bytesarraytemp = bytearray(3)
+        self.bytesarraytemp = bytearray(13)
         #sensor
 
     def convertbytes(self, data):
-        self.bytesarraytemp[0] = data[0]
-        self.bytesarraytemp[1] = data[1]
-        self.bytesarraytemp[2] = data[2]
+        for i in range(0, 13):
+            self.bytesarraytemp[i] = data[i]
         return self.bytesarraytemp
 
     def normalizedata(self, oldval, oldmin, oldmax):
@@ -69,32 +67,26 @@ class LoRaNetwork:
         return (((oldval - oldmin) * newRange) / oldRange) + 0
 
     def preparedata(self, data):
-        data[0] = int(data[0]/2)
+        data[0] = int(data[0]*2)
         data[1] = int(self.normalizedata(data[1], 245, 613)) #245 min 613 max
         data[2] = int(self.normalizedata(data[2], 65535, 0)) #65535 min 0 max
         return data
 
     def senddata(self):
-        if self.listCounter > 3:
-            self.listCounter = 0
         dataList = []
-        dataList.append(chirp_list[self.listCounter].temp())
-        dataList.append(chirp_list[self.listCounter].moist())
-        dataList.append(chirp_list[self.listCounter].light())
-        for d in dataList:
-            print('Old value: ' +str(d))
-        dataList = self.preparedata(dataList)
-        for d in dataList:
-            print('normalized: ' +str(d))
-        print('as bytes')
-        print(self.convertbytes(dataList))
+        for chirp in chirp_list:
+            tempList = []
+            tempList.append(float(chirp.temp()/10))
+            tempList.append(chirp.moist())
+            tempList.append(chirp.light())
+            tempList = self.preparedata(tempList)
+            dataList.extend(tempList)
+        waterTemp = temp.read_temp_async() # do test read to prevent bad read
+        time.sleep(1)
+        waterTemp = temp.read_temp_async()
+        dataList.append(int(temp.read_temp_async()*2))
+        print(dataList)
         self.s.send(self.convertbytes(dataList))
-        #if self.listCounter == 0:
-        #    count = self.s.send(self.convertbytes(int(temp.read_temp_async())))
-        #    print('waterTemp: ' +str(count))
-
-        self.listCounter += 1
-
 
 if __name__ == '__main__':
 
