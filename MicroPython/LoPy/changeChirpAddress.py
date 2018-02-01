@@ -10,9 +10,9 @@ class Chirp:
 
 if __name__ == '__main__':
 	i2c = I2C(0, I2C.MASTER, baudrate=10000)
-	print('available adresses: '+str(i2c.scan()))
+	print('Current active addresses: '+str(i2c.scan()))
 	addr = i2c.scan()[0]
-	print(addr)
+	print('Chosen adress: '+str(addr))
 	chirp = Chirp(addr)
 	adress_upd = int(input('enter a new adress: (between 1 and 127)'))
 	print(type(adress_upd))
