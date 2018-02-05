@@ -54,7 +54,6 @@ class LoRaNetwork:
         self.s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
         self.s.setblocking(True)
         self.bytesarraytemp = bytearray(13)
-        #sensor
 
     def convertbytes(self, data):
         for i in range(0, 13):
@@ -81,15 +80,13 @@ class LoRaNetwork:
             tempList.append(chirp.light())
             tempList = self.preparedata(tempList)
             dataList.extend(tempList)
-        waterTemp = temp.read_temp_async() # do test read to prevent bad read
-        time.sleep(1)
+        temp.start_conversion()
         waterTemp = temp.read_temp_async()
         dataList.append(int(temp.read_temp_async()*2))
         print(dataList)
         self.s.send(self.convertbytes(dataList))
 
 if __name__ == '__main__':
-
     i2c = I2C(0, I2C.MASTER, baudrate=10000)
     addresses = [10, 11, 12, 13]
     chirp_list = []
@@ -98,10 +95,8 @@ if __name__ == '__main__':
 
     ow = OneWire(Pin('P11'))
     temp = DS18X20(ow)
-    temp.read_temp_async()
 
     lora = LoRaNetwork()
-    time.sleep(1)
 
     while(True):
         lora.senddata()
